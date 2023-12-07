@@ -1,7 +1,5 @@
 module Main where
 
-import Debug.Trace (traceShowId)
-import Data.List (foldl')
 import Data.List (sort)
 import Data.List (group)
 import Data.Char (digitToInt)
@@ -22,57 +20,65 @@ determineRating s = case groups of
 
 highestPossibleRating :: String -> Int
 highestPossibleRating s
-    | numJokers >= 4 = 7
-    | numJokers == 3 && numGroups == 1 = 7 -- JJJ44
-    | numJokers == 3 && numGroups == 2 = 6 -- JJJ45
+    | numJokers >= 4 || (numJokers == 3 && numGroups == 1) = 7
+    | numJokers == 3 && numGroups == 2 = 6
     | numJokers == 0 = determineRating s
     | otherwise = maximum $ map determineRating (permutations s)
   where
-    nonJokerCards = filter (/= 'J') s
-    groups = group $ sort $ nonJokerCards
-    numGroups = length groups
+    numGroups = length $ group $ sort $ filter (/= 'J') s
     numJokers = length $ filter (== 'J') s
 
 permutations :: String -> [String]
 permutations "" = [""]
-permutations s@(x:xs)
-    | x == 'J' = concat $ map createList "AKQT98765432"
-    | otherwise = createList x
+permutations (x:xs)
+    | x == 'J' = concat $ map prependToLists "AKQT98765432"
+    | otherwise = prependToLists x
   where
-    createList c = map (c:) (permutations xs)
+    prependToLists c = map (c:) (permutations xs)
 
 cardValue :: Char -> Int
-cardValue 'A' = 14
-cardValue 'K' = 13
-cardValue 'Q' = 12
-cardValue 'J' = 1
-cardValue 'T' = 10
-cardValue c = digitToInt c
+cardValue c = case c of
+  'A' -> 14
+  'K' -> 13
+  'Q' -> 12
+  'J' -> 1
+  'T' -> 10
+  _ -> digitToInt c
 
 enumerate :: [a] -> [(Int, a)]
 enumerate [] = []
 enumerate (x:xs) = ((0, x):map (\(i, e) -> (i + 1, e)) (enumerate xs))
 
 instance Eq Hand where
-  (Hand s1 _) == (Hand s2 _) = s1 == s2
+  (Hand s1 _) == (Hand s2 _) = rating1 == rating2
+    where
+      rating1 = highestPossibleRating s1
+      rating2 = highestPossibleRating s2
 
 instance Ord Hand where
-  hand1@(Hand s1 _) `compare` hand2@(Hand s2 _) =
-    if rating1 > rating2 then GT else (
-        if rating1 < rating2 then LT else valueCompare s1 s2
-      )
+  (Hand s1 _) `compare` (Hand s2 _)
+      | rating1 > rating2 = GT
+      | rating1 < rating2 = LT
+      | otherwise = valueCompare s1 s2
     where
       rating1 = highestPossibleRating s1
       rating2 = highestPossibleRating s2
       valueCompare :: String -> String -> Ordering
       valueCompare [] [] = EQ
-      valueCompare (x:xs) (y:ys) = if firstValue /= secondValue then firstValue `compare` secondValue else valueCompare xs ys
+      valueCompare (x:xs) (y:ys)
+          | first /= second = first `compare` second
+          | otherwise = valueCompare xs ys
         where
-          firstValue = cardValue x
-          secondValue = cardValue y
+          first = cardValue x
+          second = cardValue y
 
 main :: IO ()
 main = do
   contents <- readFile "data.txt"
-  let a = sum $ map ((\(rank, (Hand _ bid)) -> rank * bid) . (\(i, e) -> (i + 1, e))) $ enumerate $ sort $ map ((\[a, b] -> (Hand a (read b))) . words) $ lines contents
+  let a = sum $ map calculateScore $ enumerate $ sort $ map createHand $ lines contents
+        where
+          createHand :: String -> Hand
+          createHand s = (\[cards, bid] -> Hand cards $ read bid) . words $ s
+          calculateScore :: (Int, Hand) -> Int
+          calculateScore (index, (Hand _ bid)) = (index + 1) * bid
   print a
