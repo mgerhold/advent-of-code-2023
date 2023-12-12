@@ -1,4 +1,5 @@
 from typing import NamedTuple
+from functools import cache
 
 
 class Record(NamedTuple):
@@ -15,46 +16,26 @@ def parse_line(line: str) -> Record:
 
 def matches(substring: str, conditions: str) -> bool:
     assert len(substring) <= len(conditions)
-    for a, b in zip(substring, conditions):
-        if b != "?" and a != b:
-            return False
-    return True
+    return not any(b != "?" and a != b for a, b in zip(substring, conditions))
 
 
-caches: dict[Record, dict[tuple[Record, int, int], int]] = dict()
-
-
+@cache
 def generate_possibilities(record: Record, intact_springs_to_distribute: int, index: int = 0,
-                           base_pattern: str = "") -> int:
+                           conditions_offset: int = 0) -> int:
     if index == len(record.groups):
-        pattern = base_pattern + "." * intact_springs_to_distribute
-        if matches(pattern, record.conditions):
-            print(pattern)
-            return 1
-        return 0
+        return int(matches("." * intact_springs_to_distribute, record.conditions[conditions_offset:]))
+
     is_at_edge = (index in (0, len(record.groups)))
-    if not is_at_edge:
-        base_pattern += "."
 
     result = 0
     for distributed in range(intact_springs_to_distribute + 1):
-        if distributed > 0:
-            base_pattern += "."
-        pattern = base_pattern
+        pattern = "." * (distributed + int(not is_at_edge))
+
         remaining_springs = intact_springs_to_distribute - distributed
         if index < len(record.groups):
             pattern += "#" * record.groups[index]
-        if matches(pattern, record.conditions):
-            if record not in caches:
-                caches[record] = dict()
-            cache = caches[record]
-            args = (record, remaining_springs, index + 1)
-            if args in cache:
-                result += cache[args]
-            else:
-                sub_result = generate_possibilities(record, remaining_springs, index + 1, pattern)
-                cache[args] = sub_result
-                result += sub_result
+        if matches(pattern, record.conditions[conditions_offset:]):
+            result += generate_possibilities(record, remaining_springs, index + 1, conditions_offset + len(pattern))
     return result
 
 
@@ -70,5 +51,4 @@ data = [parse_line(line) for line in open("data.txt")]
 total = 0
 for result in (process_record(record) for record in data):
     total += result
-    print(result)
 print(f"{total = }")
