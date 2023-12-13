@@ -8,27 +8,45 @@ class Axis(Enum):
     VERTICAL = auto()
 
 
-def determine_mirror_axis(pattern: list[str],
-                          to_ignore: Optional[tuple[Axis, int]],
-                          axis: Axis = Axis.VERTICAL) -> Optional[tuple[Axis, int]]:
-    if axis == Axis.HORIZONTAL:
-        pattern = transpose(pattern)
+def is_line_mirrored_by(line: str, column: int) -> bool:
+    for (left, right) in ((line[a], line[b]) for (a, b) in
+                          zip(range(column, -1, -1), range(column + 1, len(line)))):
+        if left != right:
+            return False
+    return True
+
+
+def determine_vertical_mirror_axis(pattern: list[str], column_to_ignore: Optional[int]) -> Optional[int]:
     width, height = len(pattern[0]), len(pattern)
-    for column in range(width - 1):
-        if to_ignore is not None and axis == to_ignore[0] and column == to_ignore[1]:
-            continue
-        is_mirror_axis = True
-        for line in pattern:
-            for (left, right) in ((line[a], line[b]) for (a, b) in
-                                  zip(range(column, -1, -1), range(column + 1, width))):
-                if left != right:
-                    is_mirror_axis = False
-                    break
-            if not is_mirror_axis:
-                break
-        if is_mirror_axis:
-            return axis, column
-    return determine_mirror_axis(pattern, to_ignore, Axis.HORIZONTAL) if axis == Axis.VERTICAL else None
+    for column in (c for c in range(width - 1) if c != column_to_ignore):
+        if all(is_line_mirrored_by(line, column) for line in pattern):
+            return column
+    return None
+
+
+def determine_horizontal_mirror_axis(pattern: list[str], row_to_ignore: int) -> Optional[int]:
+    return determine_vertical_mirror_axis(transpose(pattern), row_to_ignore)
+
+
+def determine_mirror_axis(pattern: list[str], to_ignore: Optional[tuple[Axis, int]]) -> Optional[tuple[Axis, int]]:
+    vertical = determine_vertical_mirror_axis(
+        pattern,
+        None
+        if to_ignore is None or to_ignore[0] != Axis.VERTICAL
+        else to_ignore[1]
+    )
+    if vertical is not None:
+        return Axis.VERTICAL, vertical
+
+    horizontal = determine_horizontal_mirror_axis(
+        pattern,
+        None
+        if to_ignore is None or to_ignore[0] != Axis.HORIZONTAL
+        else to_ignore[1]
+    )
+    if horizontal is not None:
+        return Axis.HORIZONTAL, horizontal
+    return None
 
 
 def transpose(pattern: list[str]) -> list[str]:
@@ -36,11 +54,8 @@ def transpose(pattern: list[str]) -> list[str]:
 
 
 def calculate_score(result: tuple[Axis, int]) -> int:
-    match result[0]:
-        case Axis.HORIZONTAL:
-            return 100 * (result[1] + 1)
-        case Axis.VERTICAL:
-            return result[1] + 1
+    axis, row_or_column = result
+    return (100 if axis == Axis.HORIZONTAL else 1) * (row_or_column + 1)
 
 
 def process_pattern_variations(pattern: list[str], to_ignore: tuple[Axis, int]) -> tuple[Axis, int]:
@@ -52,7 +67,6 @@ def process_pattern_variations(pattern: list[str], to_ignore: tuple[Axis, int]) 
             char = line[column]
             line = line[:column] + ("." if char == "#" else ".") + line[column + 1:]
             copy[row] = line
-            # print("\n".join(copy))
             result = determine_mirror_axis(copy, to_ignore)
             if result is not None and result != to_ignore:
                 return result
@@ -61,14 +75,12 @@ def process_pattern_variations(pattern: list[str], to_ignore: tuple[Axis, int]) 
 
 def main() -> None:
     patterns = [pattern.split("\n") for pattern in open("data.txt").read().split("\n\n")]
-    print(patterns)
     score = 0
     for pattern in patterns:
         original_solution = determine_mirror_axis(pattern, None)
         assert original_solution is not None
         result = process_pattern_variations(pattern, original_solution)
         score += calculate_score(result)
-        print(result)
     print(score)
 
 
