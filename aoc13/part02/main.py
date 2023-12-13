@@ -24,7 +24,7 @@ def determine_vertical_mirror_axis(pattern: list[str], column_to_ignore: Optiona
     return None
 
 
-def determine_horizontal_mirror_axis(pattern: list[str], row_to_ignore: int) -> Optional[int]:
+def determine_horizontal_mirror_axis(pattern: list[str], row_to_ignore: Optional[int]) -> Optional[int]:
     return determine_vertical_mirror_axis(transpose(pattern), row_to_ignore)
 
 
