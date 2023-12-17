@@ -131,19 +131,19 @@ def neighbors(city: Map, current_node: Node, destination: Vec2) -> set[Node]:
         case Direction.RIGHT, _:
             neighbor_directions = [Direction.DOWN, Direction.UP]
             new_direction_counts = [1, 1]
-        case Direction.LEFT, length if length < 10:
+        case Direction.LEFT, length if isinstance(length, int) and length < 10:
             neighbor_directions = [Direction.LEFT, Direction.UP, Direction.DOWN]
             new_direction_counts = [length + 1, 1, 1]
         case Direction.LEFT, _:
             neighbor_directions = [Direction.UP, Direction.DOWN]
             new_direction_counts = [1, 1]
-        case Direction.UP, length if length < 10:
+        case Direction.UP, length if isinstance(length, int) and length < 10:
             neighbor_directions = [Direction.UP, Direction.RIGHT, Direction.LEFT]
             new_direction_counts = [length + 1, 1, 1]
         case Direction.UP, _:
             neighbor_directions = [Direction.RIGHT, Direction.LEFT]
             new_direction_counts = [1, 1]
-        case Direction.DOWN, length if length < 10:
+        case Direction.DOWN, length if isinstance(length, int) and length < 10:
             neighbor_directions = [Direction.DOWN, Direction.LEFT, Direction.RIGHT]
             new_direction_counts = [length + 1, 1, 1]
         case Direction.DOWN, _:
