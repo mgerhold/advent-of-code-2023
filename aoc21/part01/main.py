@@ -104,11 +104,79 @@ def main() -> None:
 
     current_state = copy.deepcopy(garden)
     current_state[start_position] = PlotType.STEPPED_ON
+    # current_state[Vec2(0, 65)] = PlotType.STEPPED_ON
 
-    for _ in range(64):
+    counter = 0
+    visited = set()
+    left_edge_reached = False
+    right_edge_reached = False
+    top_edge_reached = False
+    bottom_edge_reached = False
+    for _ in range(65 + 131):
+        # if all((left_edge_reached, right_edge_reached, top_edge_reached, bottom_edge_reached)):
+        #     break
+        # if not left_edge_reached and sum(int(current_state[Vec2(0, y)] == PlotType.STEPPED_ON) for y in range(current_state.height)) == 1:
+        #     for y in range(current_state.height):
+        #         if current_state[Vec2(0, y)] == PlotType.STEPPED_ON:
+        #             print(f"left edge reached at {Vec2(0, y)} after {counter} steps")
+        #             left_edge_reached = True
+        # if not right_edge_reached and sum(int(current_state[Vec2(current_state.width - 1, y)] == PlotType.STEPPED_ON) for y in
+        #        range(current_state.height)) == 1:
+        #     for y in range(current_state.height):
+        #         if current_state[Vec2(current_state.width - 1, y)] == PlotType.STEPPED_ON:
+        #             print(f"right edge reached at {Vec2(current_state.width - 1, y)} after {counter} steps")
+        #             right_edge_reached = True
+        # if not top_edge_reached and sum(int(current_state[Vec2(x, 0)] == PlotType.STEPPED_ON) for x in range(current_state.width)) == 1:
+        #     for x in range(current_state.width):
+        #         if current_state[Vec2(x, 0)] == PlotType.STEPPED_ON:
+        #             print(f"upper edge reached at {Vec2(x, 0)} after {counter} steps")
+        #             top_edge_reached = True
+        # if not bottom_edge_reached and sum(int(current_state[Vec2(x, current_state.height - 1)] == PlotType.STEPPED_ON) for x in
+        #        range(current_state.width)) == 1:
+        #     for x in range(current_state.width):
+        #         if current_state[Vec2(x, current_state.height - 1)] == PlotType.STEPPED_ON:
+        #             print(f"lower edge reached at {Vec2(x, current_state.height - 1)} after {counter} steps")
+        #             bottom_edge_reached = True
+        # if (
+        #         current_state[Vec2(0, 0)] == PlotType.STEPPED_ON
+        #         and current_state[Vec2(garden.width - 1, 0)] == PlotType.STEPPED_ON
+        #         and current_state[Vec2(garden.width - 1, garden.height - 1)] == PlotType.STEPPED_ON
+        #         and current_state[Vec2(0, garden.height - 1)] == PlotType.STEPPED_ON
+        # ):
+        #     break
         current_state = current_state.step(garden)
+        for y in range(current_state.height):
+            for x in range(current_state.width):
+                position = Vec2(x, y)
+                if current_state.is_valid_coordinate(position) and current_state[position] == PlotType.STEPPED_ON:
+                    visited.add(position)
+        counter += 1
+
+    print("positions that have not been reached:")
+    for y in range(current_state.height):
+        for x in range(current_state.width):
+            position = Vec2(x, y)
+            if current_state.is_valid_coordinate(position) and position not in visited:
+                print(f"    {position = }")
+
     print(current_state)
-    print(current_state.count_plots_by_type(PlotType.STEPPED_ON))
+
+    print(f"{counter = }")
+    stepped_on_even = current_state.count_plots_by_type(PlotType.STEPPED_ON)
+    print(f"{stepped_on_even = }")
+
+    current_state = current_state.step(garden)
+    stepped_on_odd = current_state.count_plots_by_type(PlotType.STEPPED_ON)
+    print(f"{stepped_on_odd = }")
+
+    current_state = current_state.step(garden)
+    assert current_state.count_plots_by_type(PlotType.STEPPED_ON) == stepped_on_even
+
+    # num_rocks = current_state.count_plots_by_type(PlotType.ROCK)
+    # num_plots = current_state.width * current_state.height
+    # print(f"{num_plots - num_rocks - stepped_on_odd - stepped_on_even = }")
+
+
 
 
 if __name__ == "__main__":
