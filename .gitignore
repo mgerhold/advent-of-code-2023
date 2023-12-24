@@ -2,3 +2,4 @@
 **dist-newstyle/
 **.txt
 **.venv/
+**cmake-build-*/
